@@ -7,6 +7,7 @@ const VARINT_CASES: Array<[number, number[]]> = [
   [127, [0b01111111]],
   [128, [0b10000000, 0b00000001]],
   [256, [0b10000000, 0b00000010]],
+  [271, [0b10001111, 0b00000010]],
 ];
 
 for (let [value, expectedEncoded] of VARINT_CASES) {

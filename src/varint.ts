@@ -70,7 +70,7 @@ export function read(data: Uint8Array): { value: number; bytesRead: number } {
 
   while (true) {
     // Read the bottom 7 bits of data byte, shifted up by "shift".
-    value = (data[position] & 0b0111_1111) << shift;
+    value = value | (data[position] & 0b0111_1111) << shift;
 
     // Check if we need to read more bytes.
     const moreBytes: boolean = (data[position] & 0b1000_0000) > 0;
