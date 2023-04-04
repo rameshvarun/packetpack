@@ -23,44 +23,61 @@ export class Compressor {
   /** The next slot to fill when we want to set a new base packet. */
   nextBasePacket: number = 0;
 
+  setNewBase(packet: Uint8Array): number {
+    // Get the current index, but increment the next value.
+    const baseIndex = this.nextBasePacket;
+    this.nextBasePacket = (this.nextBasePacket + 1) % NUM_BASE_PACKETS;
+
+    // Set the packet at that index and return the index.
+    this.basePackets[baseIndex] = packet;
+    return baseIndex;
+  }
+
   compress(packet: Uint8Array) {
-    let encoded = this.basePackets.map((base, i) => {
-      let blocks = calculateBlocks(base, packet, this.matcher);
-      let encode = encodeBlocks(blocks);
-      return {
-        encoded: encode,
-        basePacketIndex: i,
-      };
-    });
+    // Find the best delta encoding possible.
+    let bestEncoding = this.basePackets
+      .map((base, i) => {
+        let blocks = calculateBlocks(base, packet, this.matcher);
+        let encode = encodeBlocks(blocks);
+        return {
+          encoded: encode,
+          from: i,
+        };
+      })
+      .sort((a, b) => a.encoded.length - b.encoded.length)[0];
 
-    encoded.sort((a, b) => a.encoded.length - b.encoded.length);
-
-    const best = encoded[0];
-
-    const compressionRatio = packet.length / best.encoded.length;
-    console.log(compressionRatio);
-
-    const frame = new Uint8Array(1 + best.encoded.length);
-
-    if (compressionRatio < NEW_BASE_COMPRESSION_RATIO_CUTOFF) {
-      let newBaseIndex = this.nextBasePacket;
-      this.nextBasePacket = (this.nextBasePacket + 1) % NUM_BASE_PACKETS;
-      this.basePackets[newBaseIndex] = packet;
-
+    if (bestEncoding.encoded.length > packet.length) {
+      // If the best delta encoding is larger than original packet,
+      // just send it as a literal but also mark it as a new base.
+      const to = this.setNewBase(packet);
+      const frame = new Uint8Array(1 + packet.length);
       frame[0] = writePacketHeader({
-        from: best.basePacketIndex,
-        to: newBaseIndex,
+        from: "literal",
+        to,
       });
-      frame.set(best.encoded, 1);
+      frame.set(packet, 1);
+      return frame;
     } else {
-      frame[0] = writePacketHeader({
-        from: best.basePacketIndex,
-        to: "none",
-      });
-      frame.set(best.encoded, 1);
-    }
+      // Calculate the compression ratio of the packet.
+      const compressionRatio = packet.length / bestEncoding.encoded.length;
 
-    return frame;
+      const frame = new Uint8Array(1 + bestEncoding.encoded.length);
+      frame.set(bestEncoding.encoded, 1);
+
+      if (compressionRatio < NEW_BASE_COMPRESSION_RATIO_CUTOFF) {
+        const to = this.setNewBase(packet);
+        frame[0] = writePacketHeader({
+          from: bestEncoding.from,
+          to: to,
+        });
+      } else {
+        frame[0] = writePacketHeader({
+          from: bestEncoding.from,
+          to: "none",
+        });
+      }
+      return frame;
+    }
   }
 }
 

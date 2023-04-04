@@ -55,18 +55,23 @@ messagesTest("State Updates", [
   },
 ]);
 
-messagesTest("Alternating Ping and Input Messages", [{
+messagesTest("Alternating Ping and Input Messages", [
+  {
     type: "state-update",
     position: [0, 0],
-}, {
+  },
+  {
     type: "input",
     frame: 0,
     movement: [12, 9],
-}, {
+  },
+  {
     type: "state-update",
     position: [12, 5],
-}, {
+  },
+  {
     type: "input",
     frame: 1,
     movement: [0, 0],
-}]);
+  },
+]);
