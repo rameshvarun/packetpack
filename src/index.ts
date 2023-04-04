@@ -12,7 +12,7 @@ import { read, write } from "./varint";
  * If a new packet has a worse compression ratio than
  * this, it wil be selected as a new base packet.
  */
-const NEW_BASE_COMPRESSION_RATIO_CUTOFF = 1.0;
+const NEW_BASE_COMPRESSION_RATIO_CUTOFF = 1.5;
 
 export class Compressor {
   basePackets: Uint8Array[] = new Array(NUM_BASE_PACKETS).fill(
