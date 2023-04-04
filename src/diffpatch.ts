@@ -22,7 +22,8 @@ export function calculateBlocks(
     // Try to match modified onto base.
     const match = matcher.findLongestMatch(base, modified.subarray(position));
 
-    if (match) {
+    // If a match is too small, prefer a literal.
+    if (match && match.length > 1) {
       // Emit any pending literal blocks.
       if (literalBlock) {
         blocks.push({
