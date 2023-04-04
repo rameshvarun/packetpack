@@ -71,9 +71,13 @@ export class Compressor {
           to: to,
         });
       } else {
+        // Other-wise, we consider a packet a "modifed"
+        // version of the base, so we will send it and
+        // update the base at that index.
+        this.basePackets[bestEncoding.from] = packet;
         frame[0] = writePacketHeader({
           from: bestEncoding.from,
-          to: "none",
+          to: bestEncoding.from,
         });
       }
       return frame;
