@@ -65,6 +65,9 @@ export class Compressor {
       frame.set(bestEncoding.encoded, 1);
 
       if (compressionRatio < NEW_BASE_COMPRESSION_RATIO_CUTOFF) {
+        // Although we were able to compress the packet, it
+        // is still different enough that we want to set it as
+        // a new base packet.
         const to = this.setNewBase(packet);
         frame[0] = writePacketHeader({
           from: bestEncoding.from,
