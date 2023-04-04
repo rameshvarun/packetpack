@@ -1,38 +1,24 @@
 import { Block, getBlockDataSize } from "./src/block";
+import { ExhaustiveMatcher } from "./src/matchers";
 
-
-type Match = { offset: number; length: number; };
-export function findLongestMatch(base: Uint8Array, query: Uint8Array): Match | null {
-    let longestMatch: Match | null = null;
-
-    for (let i = 0; i < base.length; ++i) {
-        const compare = base.subarray(i);
-        for (let j = 0; j < compare.length && j < query.length; ++j) {
-            if (compare[j] != query[j]) break;
-            
-            const offset = i;
-            const length = j + 1;
-            if (longestMatch === null || longestMatch.length < length) {
-                longestMatch = { offset, length }
-            }
-        }
-    }
-
-    return longestMatch
-}
 
 export function calculateBlocks(base: Uint8Array, modified: Uint8Array): Block[] {
+    // The in-progress list of blocks that we will build as we scan through modified.
     const blocks: Block[] = [];
-
-    // Start at the beginning of modified.
-    let position = 0;
 
     // Track an in-progress literal block.
     let literalBlock: null | { offset: number; length: number } = null;
 
+    // Initialize matcher.
+    const matcher = new ExhaustiveMatcher();
+
+    // Start at the beginning of the modified buffer and scan forward.
+    let position = 0;
+
     while (position < modified.length) {
         // Try to match modified onto base.
-        const match = findLongestMatch(base, modified.subarray(position));
+        const match = matcher.findLongestMatch(base, modified.subarray(position));
+        
         if (match) {
             // Emit any pending literal blocks.
             if (literalBlock) {

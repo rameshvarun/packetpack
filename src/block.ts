@@ -1,3 +1,5 @@
+const MAXIMUM_BLOCK_SIZE = 128;
+
 /**
  * Blocks are the main representation of encoded data. A list of blocks
  * describes how to transform one packet into another. A list of blocks
@@ -62,52 +64,64 @@ export function getBlockHeaderSize(b: Block): number {
     else return unexpectedBlock(b);
 }
 
+export function writeCommonHeader(isLiteral: boolean, blockLength: number, data: Uint8Array): number {
+    // The minimum block length is 1.
+    if (blockLength < 0) {
+        throw new Error("Can't encode a literal block of length < 1.")
+    }
+
+    // The length that we have to encode.
+    let length = blockLength - 1;
+
+    let firstByte = 0;
+    
+    // The first bit of the first byte signifies if this is a literal or not.
+    if (isLiteral) {
+        firstByte = firstByte | 0b10000000;
+    }
+    
+    // The bottom six bytes are the least significant bytes of our length.
+    firstByte = firstByte | (length & 0b00111111);
+
+    // Remove those six bytes.
+    length = length >> 6;
+    
+    // The second bit signals if we need more bytes.
+    if (length > 0) {
+        firstByte = firstByte | 0b01000000;
+    }
+    
+    // Write out the first byte of the header.
+    data[0] = firstByte;
+
+    let position = 1;
+    while(length > 0) {
+        let byte = 0;
+
+        // Place 7 bits of length into our byte.
+        byte = byte | (length & 0b01111111);
+
+        // Remove those 7 bytes.
+        length = length >> 7;
+
+        // Mark the first bit if we still need more bytes.
+        if (length > 0) {
+            byte = byte | 0b10000000;
+        }
+
+        // Write out byte to buffer.
+        data[position] = byte;
+        ++position;
+    }
+
+    return position;
+}
+
 /** Write out the header of a block to a buffer. */
 export function writeBlockHeader(b: Block, data: Uint8Array) {
     if (b.type === "literals") {
-        // The minimum literal block length is 1.
-        if (b.data.length === 0) {
-            throw new Error("Can't encode a literal block of length 0.")
-        }
-
-        // The length that we have to encode.
-        let length = b.data.length - 1;
-
-        // The first bit of the first byte signifies that this is a literal.
-        let firstByte = 0b10000000;
-
-        // The bottom six bytes are the least significant bytes of our length.
-        firstByte = firstByte | (length & 0b00111111);
-
-        // Remove those six bytes.
-        length = length >> 6;
-        
-        // The second bit signals if we need more bytes.
-        if (length > 0) {
-            firstByte = firstByte | 0b01000000;
-        }
-        
-        // Write out the first byte of the header.
-        data[0] = firstByte;
-
-        let position = 1;
-        while(length > 0) {
-            let byte = 0;
-
-            // Place 7 bits of length into our byte.
-            byte = byte | (length & 0b01111111);
-
-            // Remove those 7 bytes.
-            length = length >> 7;
-
-            // Mark the first bit if we still need more bytes.
-            if (length > 0) {
-                byte = byte | 0b10000000;
-            }
-
-            // Write out byte to buffer.
-            data[position] = byte;
-            ++position;
-        }
+        writeCommonHeader(true, b.data.byteLength, data);
+    } else if (b.type === "match") {
+        writeCommonHeader(false, b.length, data);
     }
 }
