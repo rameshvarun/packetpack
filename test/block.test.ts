@@ -1,4 +1,9 @@
-import { Block, getBlockEncodedSize, readBlock, writeBlock } from "../src/block";
+import {
+  Block,
+  getBlockEncodedSize,
+  readBlock,
+  writeBlock,
+} from "../src/block";
 
 const BLOCK_HEADER_CASES: Array<[Block, number[]]> = [
   [

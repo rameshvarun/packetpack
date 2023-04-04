@@ -10,6 +10,9 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "format": "prettier --write src/*.ts"
+    "format": "prettier --write src/*.ts test/*.ts"
+  },
+  "dependencies": {
+    "type-fest": "^3.7.2"
   }
 }
