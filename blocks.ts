@@ -1,4 +1,4 @@
-import { Block } from "./src/block";
+import { Block, getBlockDataSize } from "./src/block";
 
 
 type Match = { offset: number; length: number; };
@@ -104,8 +104,10 @@ const modified = enc.encode("{'position':[0,12]}");
 
 const blocks = calculateBlocks(base, modified);
 
+console.log(dec.decode(base));
+console.log(dec.decode(modified));
 console.log(blocks);
 
 const modifiedDec = applyBlocks(base, blocks);
 console.log(modifiedDec)
-console.log(dec.decode(modifiedDec));
+

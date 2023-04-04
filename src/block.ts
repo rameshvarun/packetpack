@@ -17,7 +17,7 @@ function unexpectedBlock(block: never): never {
 }
 
 /** Get the amount of data that a block represents (in bytes). */
-function getBlockDataSize(b: Block): number {
+export function getBlockDataSize(b: Block): number {
     if (b.type === "literals") return b.data.byteLength;
     else if (b.type == "match") return b.length;
     else return unexpectedBlock(b);
@@ -65,6 +65,7 @@ export function getBlockHeaderSize(b: Block): number {
 /** Write out the header of a block to a buffer. */
 export function writeBlockHeader(b: Block, data: Uint8Array) {
     if (b.type === "literals") {
+        // The minimum literal block length is 1.
         if (b.data.length === 0) {
             throw new Error("Can't encode a literal block of length 0.")
         }
