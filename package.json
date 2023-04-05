@@ -1,4 +1,7 @@
 {
+  "name": "packetpack",
+  "version": "0.0.1",
+  "description": "A library for compressing WebSocket and WebRTC DataChannel messages.",
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "jest": "^29.5.0",
@@ -11,7 +14,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "format": "prettier --write src/*.ts test/*.ts",
-    "build": "./scripts/build-lz4.sh"
+    "build": "rm -rf lib/ && ./scripts/build-lz4.sh && tsc && cp src/lz4.js lib/lz4.js"
   },
   "dependencies": {
     "ffi-napi": "^4.0.3",

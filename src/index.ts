@@ -1,6 +1,6 @@
 let lz4: any = null;
 
-export const init = require("./lz4")().then((mod: any) => {
+export const init: Promise<void> = require("./lz4")().then((mod: any) => {
   lz4 = mod;
   lz4.LZ4_createStream = lz4.cwrap("LZ4_createStream", "number");
   lz4.LZ4_decoderRingBufferSize = lz4.cwrap(
