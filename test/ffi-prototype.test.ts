@@ -1,15 +1,20 @@
-import { Compressor, Decompressor } from "../src";
 const PACKET_CAPTURE = require("./netplayjs-capture.json");
 
-const ffi = require('ffi-napi');
+const ffi = require("ffi-napi");
 
-var lz4 = ffi.Library('/opt/homebrew/lib/liblz4.dylib', {
-  'LZ4_createStream': [ 'pointer', [ ] ],
-  'LZ4_createStreamDecode': [ 'pointer', [ ] ],
-  'LZ4_compressBound': [ 'int', [ 'int' ] ],
-  'LZ4_compress_fast_continue': [ 'int', [ 'pointer', 'pointer', 'pointer', 'int', 'int', 'int' ] ],
-  'LZ4_decompress_safe_continue': [ 'int', [ 'pointer', 'pointer', 'pointer', 'int', 'int' ] ],
-  'LZ4_decoderRingBufferSize': [ 'int', [ 'int' ] ],
+var lz4 = ffi.Library("/opt/homebrew/lib/liblz4.dylib", {
+  LZ4_createStream: ["pointer", []],
+  LZ4_createStreamDecode: ["pointer", []],
+  LZ4_compressBound: ["int", ["int"]],
+  LZ4_compress_fast_continue: [
+    "int",
+    ["pointer", "pointer", "pointer", "int", "int", "int"],
+  ],
+  LZ4_decompress_safe_continue: [
+    "int",
+    ["pointer", "pointer", "pointer", "int", "int"],
+  ],
+  LZ4_decoderRingBufferSize: ["int", ["int"]],
 });
 
 const textEncoder = new TextEncoder();
@@ -22,7 +27,7 @@ const MAX_COMPRESSED_SIZE = lz4.LZ4_compressBound(MAX_MESSAGE_SIZE);
 const compressStream = lz4.LZ4_createStream();
 const decompressStream = lz4.LZ4_createStream();
 
-test("NetplayJS Benchmark", () => {
+xtest("NetplayJS Benchmark", () => {
   let totalMessageBytes = 0;
   let totalCompressedBytes = 0;
 
@@ -44,12 +49,14 @@ test("NetplayJS Benchmark", () => {
     let encodeBuffer = new Uint8Array(MAX_COMPRESSED_SIZE);
 
     // Compress the message.
-    const bytesWritten = lz4.LZ4_compress_fast_continue(compressStream,
+    const bytesWritten = lz4.LZ4_compress_fast_continue(
+      compressStream,
       encodeRingBuffer.subarray(encodeRingBufferPositon),
       encodeBuffer,
       message.length,
       encodeBuffer.length,
-      1);
+      1
+    );
 
     encodeBuffer = encodeBuffer.subarray(0, bytesWritten);
 
@@ -60,24 +67,26 @@ test("NetplayJS Benchmark", () => {
     if (encodeRingBufferPositon >= RING_BUFFER_SIZE - MAX_MESSAGE_SIZE)
       encodeRingBufferPositon = 0;
 
-    const bytesRead = lz4.LZ4_decompress_safe_continue(decompressStream,
+    const bytesRead = lz4.LZ4_decompress_safe_continue(
+      decompressStream,
       encodeBuffer,
       decodeRingBuffer.subarray(decodeRingBufferPositon),
       encodeBuffer.length,
-      MAX_MESSAGE_SIZE);
+      MAX_MESSAGE_SIZE
+    );
 
-    const decodedBuffer = decodeRingBuffer.subarray(decodeRingBufferPositon, decodeRingBufferPositon + bytesRead);
+    const decodedBuffer = decodeRingBuffer.subarray(
+      decodeRingBufferPositon,
+      decodeRingBufferPositon + bytesRead
+    );
 
     decodeRingBufferPositon += bytesRead;
     if (decodeRingBufferPositon >= RING_BUFFER_SIZE - MAX_MESSAGE_SIZE)
       decodeRingBufferPositon = 0;
-
 
     expect(bytesRead).toEqual(message.length);
     expect(decodedBuffer).toEqual(message);
   }
 
   console.log(totalCompressedBytes / totalMessageBytes);
-})
-
-
+});

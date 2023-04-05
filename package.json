@@ -10,7 +10,8 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "format": "prettier --write src/*.ts test/*.ts"
+    "format": "prettier --write src/*.ts test/*.ts",
+    "build": "./scripts/build-lz4.sh"
   },
   "dependencies": {
     "ffi-napi": "^4.0.3",
