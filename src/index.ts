@@ -1,6 +1,6 @@
 let lz4: any = null;
 
-export const init: Promise<void> = require("./lz4")().then((mod: any) => {
+export const moduleLoaded: Promise<void> = require("./lz4")().then((mod: any) => {
   lz4 = mod;
   lz4.LZ4_createStream = lz4.cwrap("LZ4_createStream", "number");
   lz4.LZ4_decoderRingBufferSize = lz4.cwrap(
@@ -20,6 +20,10 @@ export const init: Promise<void> = require("./lz4")().then((mod: any) => {
     ["number", "number", "number", "number", "number"]
   );
 });
+
+export function init() {
+  return moduleLoaded;
+}
 
 const MAX_MESSAGE_SIZE = 5 * 1024;
 
