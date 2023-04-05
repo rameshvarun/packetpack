@@ -29,6 +29,9 @@ test("NetplayJS Benchmark", () => {
   const encodeRingBuffer = new Uint8Array(RING_BUFFER_SIZE);
   let encodeRingBufferPositon = 0;
 
+  const decodeRingBuffer = new Uint8Array(RING_BUFFER_SIZE);
+  let decodeRingBufferPositon = 0;
+
   for (let packet of PACKET_CAPTURE) {
     // Create a JSON-encoded data from this packet.
     const message = textEncoder.encode(JSON.stringify(packet));
@@ -38,7 +41,7 @@ test("NetplayJS Benchmark", () => {
     encodeRingBuffer.set(message, encodeRingBufferPositon);
 
     // Create destination buffer for compressed data.
-    const encodeBuffer = new Uint8Array(MAX_COMPRESSED_SIZE);
+    let encodeBuffer = new Uint8Array(MAX_COMPRESSED_SIZE);
 
     // Compress the message.
     const bytesWritten = lz4.LZ4_compress_fast_continue(compressStream,
@@ -48,12 +51,30 @@ test("NetplayJS Benchmark", () => {
       encodeBuffer.length,
       1);
 
+    encodeBuffer = encodeBuffer.subarray(0, bytesWritten);
+
     totalCompressedBytes += bytesWritten;
 
     // Update the ring buffer position.
     encodeRingBufferPositon += message.length;
     if (encodeRingBufferPositon >= RING_BUFFER_SIZE - MAX_MESSAGE_SIZE)
       encodeRingBufferPositon = 0;
+
+    const bytesRead = lz4.LZ4_decompress_safe_continue(decompressStream,
+      encodeBuffer,
+      decodeRingBuffer.subarray(decodeRingBufferPositon),
+      encodeBuffer.length,
+      MAX_MESSAGE_SIZE);
+
+    const decodedBuffer = decodeRingBuffer.subarray(decodeRingBufferPositon, decodeRingBufferPositon + bytesRead);
+
+    decodeRingBufferPositon += bytesRead;
+    if (decodeRingBufferPositon >= RING_BUFFER_SIZE - MAX_MESSAGE_SIZE)
+      decodeRingBufferPositon = 0;
+
+
+    expect(bytesRead).toEqual(message.length);
+    expect(decodedBuffer).toEqual(message);
   }
 
   console.log(totalCompressedBytes / totalMessageBytes);
