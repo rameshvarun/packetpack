@@ -57,7 +57,8 @@ class RingBuffer {
 
   update(bytes: number) {
     this.position += bytes;
-    if (this.position >= this.size - MAX_PACKET_UNCOMPRESSED_SIZE) this.position = 0;
+    if (this.position >= this.size - MAX_PACKET_UNCOMPRESSED_SIZE)
+      this.position = 0;
   }
 }
 
@@ -84,7 +85,9 @@ export class Compressor {
     this.streamPtr = lz4.LZ4_createStream();
 
     // Allocate the ring buffer.
-    const ringBufferSize = lz4.LZ4_decoderRingBufferSize(MAX_PACKET_UNCOMPRESSED_SIZE);
+    const ringBufferSize = lz4.LZ4_decoderRingBufferSize(
+      MAX_PACKET_UNCOMPRESSED_SIZE
+    );
     this.ringBuffer = new RingBuffer(ringBufferSize);
 
     // Allocate the encode destination buffer.
@@ -133,7 +136,9 @@ export class Decompressor {
     this.streamPtr = lz4.LZ4_createStream();
 
     // Allocate the ring buffer.
-    const ringBufferSize = lz4.LZ4_decoderRingBufferSize(MAX_PACKET_UNCOMPRESSED_SIZE);
+    const ringBufferSize = lz4.LZ4_decoderRingBufferSize(
+      MAX_PACKET_UNCOMPRESSED_SIZE
+    );
     this.ringBuffer = new RingBuffer(ringBufferSize);
 
     // Allocate the source buffer that packets
