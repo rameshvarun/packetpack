@@ -4,9 +4,9 @@ PacketPack is a libary designed for compressing schemaless data formats (like JS
 
 It works by encoding an LZ4 stream with block boundaries that exactly match the datagram message boundaries.
 
-If you use a schema-based message format (eg: Protobuf, Thrift, FlatBuffers) this is probably not as useful, though very large messages might still benefit.
-
-This format also can't be used for unreliable datagram channels since it assumes the receiver will receive every packet in-order.
+- If you use a schema-based message format (such as Protobuf, Thrift, or FlatBuffers) this is probably not as useful, unless your messages are very large.
+- This isn't as useful for WebSockets since the transport layer already has the option to compress across packets (see [RFC 7692](https://datatracker.ietf.org/doc/html/rfc7692#section-7.2.3.2)).
+- This format also can't be used for unreliable or unordered channels since it assumes the receiver will receive every packet in-order.
 
 ## Installation
 
