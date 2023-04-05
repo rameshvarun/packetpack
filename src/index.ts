@@ -1,35 +1,47 @@
 let lz4: any = null;
 
-export const moduleLoaded: Promise<void> = require("./lz4")().then((mod: any) => {
-  lz4 = mod;
-  lz4.LZ4_createStream = lz4.cwrap("LZ4_createStream", "number");
-  lz4.LZ4_decoderRingBufferSize = lz4.cwrap(
-    "LZ4_decoderRingBufferSize",
-    "number",
-    ["number"]
-  );
-  lz4.LZ4_compressBound = lz4.cwrap("LZ4_compressBound", "number", ["number"]);
-  lz4.LZ4_compress_fast_continue = lz4.cwrap(
-    "LZ4_compress_fast_continue",
-    "number",
-    ["number", "number", "number", "number", "number", "number"]
-  );
-  lz4.LZ4_decompress_safe_continue = lz4.cwrap(
-    "LZ4_decompress_safe_continue",
-    "number",
-    ["number", "number", "number", "number", "number"]
-  );
-});
+export const moduleLoaded: Promise<void> = require("./lz4")().then(
+  (mod: any) => {
+    lz4 = mod;
+    lz4.LZ4_createStream = lz4.cwrap("LZ4_createStream", "number");
+    lz4.LZ4_decoderRingBufferSize = lz4.cwrap(
+      "LZ4_decoderRingBufferSize",
+      "number",
+      ["number"]
+    );
+    lz4.LZ4_compressBound = lz4.cwrap("LZ4_compressBound", "number", [
+      "number",
+    ]);
+    lz4.LZ4_compress_fast_continue = lz4.cwrap(
+      "LZ4_compress_fast_continue",
+      "number",
+      ["number", "number", "number", "number", "number", "number"]
+    );
+    lz4.LZ4_decompress_safe_continue = lz4.cwrap(
+      "LZ4_decompress_safe_continue",
+      "number",
+      ["number", "number", "number", "number", "number"]
+    );
+  }
+);
 
 export function init() {
   return moduleLoaded;
 }
 
-const MAX_MESSAGE_SIZE = 5 * 1024;
+/**
+ * We can only compress packets smaller than this size.
+ * This allows for easy buffer allocation. Many browsers
+ * cannot send packets smaller than this size anyways.
+ * https://viblast.com/blog/2015/2/5/webrtc-data-channel-message-size/
+ */
+const MAX_PACKET_UNCOMPRESSED_SIZE = 64 * 1024;
 
-// If we want to take advantage of block dependence,
-// LZ4 requires that data be placed into a ring buffer
-// at both the encoder and the decoder.
+/**
+ * If we want to take advantage of inter message dependence,
+ * LZ4 requires that data be placed into a ring buffer
+ * at both the encoder and the decoder.
+ */
 class RingBuffer {
   size: number;
   ptr: number;
@@ -45,7 +57,7 @@ class RingBuffer {
 
   update(bytes: number) {
     this.position += bytes;
-    if (this.position >= this.size - MAX_MESSAGE_SIZE) this.position = 0;
+    if (this.position >= this.size - MAX_PACKET_UNCOMPRESSED_SIZE) this.position = 0;
   }
 }
 
@@ -72,16 +84,18 @@ export class Compressor {
     this.streamPtr = lz4.LZ4_createStream();
 
     // Allocate the ring buffer.
-    const ringBufferSize = lz4.LZ4_decoderRingBufferSize(MAX_MESSAGE_SIZE);
+    const ringBufferSize = lz4.LZ4_decoderRingBufferSize(MAX_PACKET_UNCOMPRESSED_SIZE);
     this.ringBuffer = new RingBuffer(ringBufferSize);
 
     // Allocate the encode destination buffer.
-    const encodeBound = lz4.LZ4_compressBound(MAX_MESSAGE_SIZE);
+    const encodeBound = lz4.LZ4_compressBound(MAX_PACKET_UNCOMPRESSED_SIZE);
     this.encodeBuffer = new Buffer(encodeBound);
   }
 
   compress(packet: Uint8Array): Uint8Array {
     if (!lz4) throw new Error(`Module not initialized.`);
+    if (packet.byteLength > MAX_PACKET_UNCOMPRESSED_SIZE)
+      throw new Error(`Packet is too large.`);
 
     // Copy packet into ring buffer.
     lz4.HEAPU8.set(packet, this.ringBuffer.cursor());
@@ -119,12 +133,12 @@ export class Decompressor {
     this.streamPtr = lz4.LZ4_createStream();
 
     // Allocate the ring buffer.
-    const ringBufferSize = lz4.LZ4_decoderRingBufferSize(MAX_MESSAGE_SIZE);
+    const ringBufferSize = lz4.LZ4_decoderRingBufferSize(MAX_PACKET_UNCOMPRESSED_SIZE);
     this.ringBuffer = new RingBuffer(ringBufferSize);
 
     // Allocate the source buffer that packets
     // will be decompressed from.
-    const compressBound = lz4.LZ4_compressBound(MAX_MESSAGE_SIZE);
+    const compressBound = lz4.LZ4_compressBound(MAX_PACKET_UNCOMPRESSED_SIZE);
     this.compressedBuffer = new Buffer(compressBound);
   }
 
@@ -139,7 +153,7 @@ export class Decompressor {
       this.compressedBuffer.ptr,
       this.ringBuffer.cursor(),
       packet.length,
-      MAX_MESSAGE_SIZE
+      MAX_PACKET_UNCOMPRESSED_SIZE
     );
 
     // Read the decompressed data out from the ring buffer.

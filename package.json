@@ -18,5 +18,10 @@
     "test:watch": "jest --watch",
     "format": "prettier --write src/*.ts test/*.ts",
     "build": "rm -rf lib/ && ./scripts/build-lz4.sh && tsc && cp src/lz4.js lib/lz4.js"
-  }
+  },
+  "files": [
+    "/lib",
+    "/src",
+    "README.md"
+  ]
 }

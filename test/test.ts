@@ -38,3 +38,18 @@ test("NetplayJS Packet Capture", async () => {
 
   console.log(`Compression Ratio: ${totalMessageBytes / totalCompressedBytes}`);
 });
+
+test("8kB Packet", () => {
+  const packet = new Uint8Array(8 * 1024);
+  for (let i = 0; i < packet.length; i++) {
+    packet[i] = i % 256;
+  }
+
+  const compressor = new Compressor();
+  const decompressor = new Decompressor();
+
+  const compressed = compressor.compress(packet);
+  const decompressed = decompressor.decompress(compressed);
+
+  expect(decompressed).toEqual(packet);
+});
