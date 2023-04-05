@@ -1,9 +1,10 @@
 {
   "name": "packetpack",
   "version": "0.0.1",
-  "description": "A library for compressing WebSocket and WebRTC DataChannel messages.",
+  "description": "A library for compressing WebRTC DataChannel messages.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "repository": "https://github.com/rameshvarun/packetpack.git",
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "ffi-napi": "^4.0.3",
