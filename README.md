@@ -1,5 +1,5 @@
 # packetpack
-![npm](https://img.shields.io/npm/v/packetpack)
+[![npm](https://img.shields.io/npm/v/packetpack)](https://www.npmjs.com/package/packetpack)
 
 PacketPack is a libary designed for compressing schemaless data formats (like JSON or msgpack) when sent over reliable ordered datagram channels (particularly WebRTC DataChannels). It's designed to run both in Node and in the browser (use with a module bundler), and was created for use in [NetplayJS](https://github.com/rameshvarun/netplayjs).
 
